@@ -666,7 +666,7 @@ def get_todos():
 
 FastAPIは自動で **API仕様書** を生成する
 
-`http://localhost:8000/docs` にアクセスすると:
+`/docs` にアクセスすると:
 - 全エンドポイントの一覧
 - リクエスト/レスポンスの形式
 - **その場でAPIを試せる** "Try it out" ボタン
