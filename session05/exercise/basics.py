@@ -14,6 +14,18 @@
   [x] 2: 買い物する
   [ ] 3: 自分のTODO
 """
+todos = [
+    {"id": 1, "title": "課題を出す", "done": False},
+    {"id": 2, "title": "買い物する", "done": True},
+    {"id": 3, "title": "自分のTODO", "done": False},
+]
+
+def show_todos(todo_list):
+    for todo in todo_list:
+        status = "[x]" if todo["done"] else "[ ]"
+        print(f'{status} {todo["id"]}: {todo["title"]}')
+
+show_todos(todos)
 
 # ヒント: TODOリストを作成する
 #   todos = [
