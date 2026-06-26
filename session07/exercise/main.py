@@ -37,13 +37,13 @@ app = FastAPI(title="TODO API")
 # --- TODO: CORS設定を追加してください（実習6・発展）---
 # 同一オリジン配信なら無くても動く。フロントを別オリジンに分けたとき必要になる設定。
 # ヒント:
-#   app.add_middleware(
-#       CORSMiddleware,
-#       allow_origins=["*"],
-#       allow_credentials=True,
-#       allow_methods=["*"],
-#       allow_headers=["*"],
-#   )
+app.add_middleware(
+       CORSMiddleware,
+       allow_origins=["*"],
+       allow_credentials=True,
+       allow_methods=["*"],
+       allow_headers=["*"],
+   )
 
 
 # --- データベース接続について ---
@@ -133,11 +133,11 @@ def delete_todo(todo_id: int):
 
 # --- TODO: 静的ファイル配信を追加してください（実習2）---
 # TODO(実習2): 静的ファイルを配信してください
-#   ヒント:
-#   app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 #
 # 注意: app.mount() はすべてのパスを受け取るので、ファイルの最後に書いてください
 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
