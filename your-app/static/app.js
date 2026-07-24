@@ -17,121 +17,113 @@
  */
 
 // サーバー側のAPIのアドレス（main.py の @app.get("/todos") などに対応）
-const API_URL = "/todos";
-
-// ============================================================
-// TODO操作（CRUD）
-// ============================================================
+const API_URL = "/animes";
 
 /**
- * TODO一覧を取得して表示する
+ * アニメ一覧を取得して描画する
  */
-async function loadTodos() {
-  // try ... catch: 通信中にエラーが起きても、アプリが止まらないようにする
+async function loadAnimes() {
   try {
-    // サーバーに「一覧をください」とお願いし、返事(response)を待つ
     const response = await fetch(API_URL);
 
-    // response.ok が false = サーバーがエラーを返したとき
     if (!response.ok) {
-      const error = await response.json(); // エラー内容を取り出す
-      showError(error.detail || "TODOの取得に失敗しました");
-      return; // ここで処理を終える
+      const error = await response.json();
+      showError(error.detail || "アニメ一覧の取得に失敗しました");
+      return;
     }
 
-    // 返ってきたデータ(JSON)をJavaScriptの配列に変換する
-    const todos = await response.json();
-    renderTodos(todos); // 画面に描画する
+    const animes = await response.json();
+    renderAnimes(animes);
   } catch (error) {
-    // そもそもサーバーにつながらなかったときなど
     showError("通信エラーが発生しました");
   }
 }
 
 /**
- * 新しいTODOを追加する
+ * 新しいアニメを追加する（FormDataを使用）
  */
-async function addTodo() {
-  // 入力欄の要素を取得し、入力された文字を読み取る（trimで前後の空白を除去）
-  const input = document.getElementById("todo-input");
+async function addAnime() {
+  const input = document.getElementById("anime-input");
+  const memoInput = document.getElementById("anime-memo");
+  const imageInput = document.getElementById("anime-image");
+
   const title = input.value.trim();
+  const memo = memoInput.value.trim();
 
-  // 送信前のチェック（バリデーション）: 空のときは送らずに注意を表示
   if (title === "") {
-    showError("TODOのタイトルを入力してください");
+    showError("アニメのタイトルを入力してください");
     return;
   }
 
-  // 長すぎるときも送らない（サーバー側でも100文字までチェックしている）
-  if (title.length > 100) {
-    showError("タイトルは100文字以内で入力してください");
-    return;
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("memo", memo);
+  if (imageInput.files[0]) {
+    formData.append("image", imageInput.files[0]);
   }
 
   try {
-    // サーバーに「このTODOを追加して」と送る
     const response = await fetch(API_URL, {
-      method: "POST", // POST = 新しいデータを作る
-      headers: { "Content-Type": "application/json" }, // 中身はJSON形式だと伝える
-      body: JSON.stringify({ title: title }), // データをJSON文字列にして送る
+      method: "POST",
+      body: formData, // FormDataを送る時は headers の Content-Type は自動設定させるため入れない
     });
 
     if (!response.ok) {
       const error = await response.json();
-      showError(error.detail || "TODOの追加に失敗しました");
+      showError(error.detail || "アニメの追加に失敗しました");
       return;
     }
 
-    input.value = ""; // 入力欄を空に戻す
-    await loadTodos(); // 一覧を取り直して、追加結果を画面に反映する
+    // フォームを空にする
+    input.value = "";
+    memoInput.value = "";
+    imageInput.value = "";
+
+    await loadAnimes();
   } catch (error) {
     showError("通信エラーが発生しました");
   }
 }
 
 /**
- * TODOの完了状態を切り替える
- * id: 対象のTODOの番号 / currentDone: いまの完了状態(true/false)
+ * 視聴状態（視聴完了か否か）を切り替える
  */
-async function toggleTodo(id, currentDone) {
+async function toggleAnime(id, currentFinished, memo) {
   try {
-    // `${API_URL}/${id}` で /todos/5 のようなアドレスを作る（id=5のTODOが対象）
     const response = await fetch(`${API_URL}/${id}`, {
-      method: "PUT", // PUT = 既存のデータを更新する
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !currentDone }), // !で完了/未完了を反転させる
+      body: JSON.stringify({ finished: !currentFinished, memo: memo || "" }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      showError(error.detail || "TODOの更新に失敗しました");
+      showError(error.detail || "視聴状態の更新に失敗しました");
       return;
     }
 
-    await loadTodos(); // 一覧を取り直して、更新結果を画面に反映する
+    await loadAnimes();
   } catch (error) {
     showError("通信エラーが発生しました");
   }
 }
 
 /**
- * TODOを削除する
- * id: 削除したいTODOの番号
+ * アニメを削除する
  */
-async function deleteTodo(id) {
+async function deleteAnime(id) {
   try {
-    // /todos/5 のようなアドレスに対して削除を依頼する
     const response = await fetch(`${API_URL}/${id}`, {
-      method: "DELETE", // DELETE = データを削除する
+      method: "DELETE",
     });
 
     if (!response.ok) {
       const error = await response.json();
-      showError(error.detail || "TODOの削除に失敗しました");
+      showError(error.detail || "アニメの削除に失敗しました");
       return;
     }
 
-    await loadTodos(); // 一覧を取り直して、削除結果を画面に反映する
+    await loadAnimes();
   } catch (error) {
     showError("通信エラーが発生しました");
   }
@@ -141,55 +133,57 @@ async function deleteTodo(id) {
 // 描画
 // ============================================================
 
-/**
- * TODOリストを描画する（XSS対策: createElement + textContent）
- *
- * 受け取ったTODOの配列をもとに、画面に並べる<li>を1件ずつ組み立てる。
- *
- * 【XSS対策のポイント】
- *  innerHTML に文字列を直接入れると、入力に紛れ込んだ<script>などが
- *  実行されてしまう危険がある（XSS）。そこで textContent を使い、
- *  入力を「ただの文字」として扱うことで、この攻撃を防いでいる。
- */
-function renderTodos(todos) {
-  const list = document.getElementById("todo-list");
-  list.innerHTML = ""; // 古い表示を一度すべて消してから描き直す
+function renderAnimes(animes) {
+  const list = document.getElementById("anime-list");
+  list.innerHTML = "";
 
-  // todos配列の1件ずつ(todo)について、リストの行を作る
-  todos.forEach((todo) => {
-    // <li> 完了済みなら "done" クラスを足して見た目を変える
+  animes.forEach((anime) => {
+    const isFinished = Boolean(anime.finished);
     const li = document.createElement("li");
-    li.className = "todo-item" + (todo.done ? " done" : "");
+    li.className = "anime-item" + (isFinished ? " finished" : "");
 
-    // チェックボックスとタイトルをまとめる<label>
+    // 画像があれば表示
+    if (anime.image_url) {
+      const img = document.createElement("img");
+      img.src = anime.image_url;
+      img.className = "anime-thumbnail";
+      li.appendChild(img);
+    }
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "anime-content";
+
     const label = document.createElement("label");
-    label.className = "todo-label";
+    label.className = "anime-label";
 
-    // 完了チェックボックス
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.className = "todo-checkbox";
-    checkbox.checked = todo.done; // いまの完了状態をチェックに反映
-    // チェックが変わったら、完了状態を切り替える関数を呼ぶ
-    checkbox.addEventListener("change", () => toggleTodo(todo.id, todo.done));
+    checkbox.className = "anime-checkbox";
+    checkbox.checked = isFinished;
+    checkbox.addEventListener("change", () => toggleAnime(anime.id, isFinished, anime.memo));
 
-    // TODOのタイトル文字。textContent で安全に入れる（XSS対策）
     const titleSpan = document.createElement("span");
-    titleSpan.className = "todo-title";
-    titleSpan.textContent = todo.title;
+    titleSpan.className = "anime-title";
+    titleSpan.textContent = anime.title;
 
-    // label の中に [チェックボックス][タイトル] を入れる
     label.appendChild(checkbox);
     label.appendChild(titleSpan);
+    contentDiv.appendChild(label);
 
-    // 削除ボタン。押されたら削除する関数を呼ぶ
+    // 感想・メモがあれば表示
+    if (anime.memo) {
+      const memoP = document.createElement("p");
+      memoP.className = "anime-memo-text";
+      memoP.textContent = anime.memo;
+      contentDiv.appendChild(memoP);
+    }
+
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-button";
     deleteBtn.textContent = "削除";
-    deleteBtn.addEventListener("click", () => deleteTodo(todo.id));
+    deleteBtn.addEventListener("click", () => deleteAnime(anime.id));
 
-    // <li> の中に [label][削除ボタン] を入れて、リストに追加する
-    li.appendChild(label);
+    li.appendChild(contentDiv);
     li.appendChild(deleteBtn);
 
     list.appendChild(li);
@@ -200,14 +194,12 @@ function renderTodos(todos) {
 // メッセージ表示
 // ============================================================
 
-// エラーメッセージを画面に表示する（5秒後に自動で消える）
 function showError(message) {
   const errorDiv = document.getElementById("error-message");
-  errorDiv.textContent = message; // メッセージを表示
-  errorDiv.style.display = "block"; // 見えるようにする
-  // setTimeout: 指定したミリ秒後に処理を実行する。5000ミリ秒 = 5秒
+  errorDiv.textContent = message;
+  errorDiv.style.display = "block";
   setTimeout(() => {
-    errorDiv.style.display = "none"; // 5秒後に隠す
+    errorDiv.style.display = "none";
   }, 5000);
 }
 
@@ -215,11 +207,10 @@ function showError(message) {
 // イベントリスナー
 // ============================================================
 
-// フォームが送信された（追加ボタン or Enter）ときの動き
-document.getElementById("todo-form").addEventListener("submit", function (e) {
-  e.preventDefault(); // ページが再読み込みされる標準動作を止める
-  addTodo(); // 自分で用意した追加処理を呼ぶ
+document.getElementById("anime-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  addAnime();
 });
 
-// ページ読み込み時に、まずTODO一覧を取得して表示する（ここがスタート地点）
-loadTodos();
+// ページ読み込み時にアニメ一覧を取得
+loadAnimes();
